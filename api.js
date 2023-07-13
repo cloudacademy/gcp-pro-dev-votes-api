@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const HttpError = require('./http-error');
 require('dotenv').config();
 app.use(express.json());
 
@@ -7,8 +8,6 @@ app.use(express.json());
 const PORT = process.env.PORT;
 const VOTE_URL = process.env.VOTE_URL;
 const VOTES_URL = process.env.VOTES_URL;
-
-let voteCount = 0;
 
 // Middleware to set Access-Control-Allow-Origin header on all APIs
 app.use((req, res, next) => {
@@ -49,13 +48,24 @@ app.post('/vote', (req, res) => {
 // GET method for retrieving vote count
 app.get('/votes', (req, res) => {
   fetch(VOTES_URL)
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        throw new HttpError(response.status, response.statusText);
+      }
+      return response.json()
+    })
     .then(data => {
         console.log(data)
         return res.send(data)
       }
     )
-    .catch(error => console.error(error));
+    .catch(error => {
+      console.error(error)
+      if (error instanceof HttpError) {
+        return res.status(error.status).json({message: `Couldn't reach backend: ${error.status} ${error.message}`});
+      }
+      return res.status(500).json('Internal Server Error');
+    });
 });
 
 app.listen(PORT, () => {

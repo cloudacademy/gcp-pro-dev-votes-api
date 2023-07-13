@@ -31,6 +31,8 @@ kind: Service
 apiVersion: v1
 metadata:
   name: votes-api
+  annotations:
+    cloud.google.com/neg: '{"ingress": true}'
 spec:
   type: ClusterIP
   ports:

@@ -36,13 +36,23 @@ app.post('/vote', (req, res) => {
     },
     body: JSON.stringify({ vote: req.body.vote }),
   })
-    .then(response => response.json())
-    .then(data => {
-        console.log(data)
-        return res.send(data)
+    .then(response => {
+      if (!response.ok) {
+        throw new HttpError(response.status, response.statusText);
       }
-    )
-    .catch(error => console.error(error));
+      return response.json()
+    })
+    .then(data => {
+      console.log(data)
+      return res.send(data)
+    })
+    .catch(error => {
+      console.error(error)
+      if (error instanceof HttpError) {
+        return res.status(error.status).json({ message: `Couldn't reach backend: ${error.status} ${error.message}` });
+      }
+      return res.status(500).json('Internal Server Error');
+    });
 });
 
 // GET method for retrieving vote count
@@ -55,14 +65,13 @@ app.get('/votes', (req, res) => {
       return response.json()
     })
     .then(data => {
-        console.log(data)
-        return res.send(data)
-      }
-    )
+      console.log(data)
+      return res.send(data)
+    })
     .catch(error => {
       console.error(error)
       if (error instanceof HttpError) {
-        return res.status(error.status).json({message: `Couldn't reach backend: ${error.status} ${error.message}`});
+        return res.status(error.status).json({ message: `Couldn't reach backend: ${error.status} ${error.message}` });
       }
       return res.status(500).json('Internal Server Error');
     });

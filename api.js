@@ -1,5 +1,7 @@
 const express = require('express');
 const app = express();
+const {GoogleAuth} = require('google-auth-library');
+const auth = new GoogleAuth();
 const HttpError = require('./http-error');
 require('dotenv').config();
 app.use(express.json());

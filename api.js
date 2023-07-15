@@ -2,7 +2,6 @@ const express = require('express');
 const app = express();
 const {GoogleAuth} = require('google-auth-library');
 const auth = new GoogleAuth();
-const HttpError = require('./http-error');
 require('dotenv').config();
 app.use(express.json());
 
@@ -30,53 +29,36 @@ app.get('/', (req, res) => {
 });
 
 // POST method for voting
-app.post('/vote', (req, res) => {
-  fetch(VOTE_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ vote: req.body.vote }),
-  })
-    .then(response => {
-      if (!response.ok) {
-        throw new HttpError(response.status, response.statusText);
-      }
-      return response.json()
-    })
-    .then(data => {
-      console.log(data)
-      return res.send(data)
-    })
-    .catch(error => {
-      console.error(error)
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ message: `Couldn't reach backend: ${error.status} ${error.message}` });
-      }
-      return res.status(500).json('Internal Server Error');
+app.post('/vote', async (req, res) => {
+  try {
+    const client = await auth.getIdTokenClient(VOTE_URL);
+    const response = await client.request({
+      url: VOTE_URL,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ vote: req.body.vote }),
     });
+    return res.send(response.data);
+  } catch (error) {
+    console.error(error);
+    reponse = error.response;
+    return res.status(reponse.status).json({ message: `Couldn't reach backend: ${reponse.status} ${reponse.statusText}` });
+  }
 });
 
 // GET method for retrieving vote count
-app.get('/votes', (req, res) => {
-  fetch(VOTES_URL)
-    .then(response => {
-      if (!response.ok) {
-        throw new HttpError(response.status, response.statusText);
-      }
-      return response.json()
-    })
-    .then(data => {
-      console.log(data)
-      return res.send(data)
-    })
-    .catch(error => {
-      console.error(error)
-      if (error instanceof HttpError) {
-        return res.status(error.status).json({ message: `Couldn't reach backend: ${error.status} ${error.message}` });
-      }
-      return res.status(500).json('Internal Server Error');
-    });
+app.get('/votes', async (_, res) => {
+  try {
+    const client = await auth.getIdTokenClient(VOTES_URL);
+    const response = await client.request({ url: VOTES_URL });
+    return res.send(response.data);
+  } catch (error) {
+    console.error(error);
+    reponse = error.response;
+    return res.status(reponse.status).json({ message: `Couldn't reach backend: ${reponse.status} ${reponse.statusText}` });
+  }
 });
 
 app.listen(PORT, () => {

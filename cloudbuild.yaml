@@ -30,3 +30,5 @@ steps:
         while ! kubectl get nodes ; do sleep 1; done
         kubectl get ns ${_REPOSITORY} || kubectl create ns ${_REPOSITORY}
         kubectl apply --namespace ${_REPOSITORY} -f k8s/deploy.yaml
+logsBucket: ${_BUCKET_NAME}
+serviceAccount: ${_SERVICE_ACCOUNT}
